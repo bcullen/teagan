@@ -19,6 +19,18 @@ async function main() {
 
   console.log("Created admin user:", admin)
 
+  // Create settings
+  const settings = await prisma.settings.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: {
+      id: "singleton",
+      allowPublicUploads: false,
+    },
+  })
+
+  console.log("Created settings:", settings)
+
   // Create sample galleries
   const nationalDance = await prisma.gallery.upsert({
     where: { id: "comp-1" },

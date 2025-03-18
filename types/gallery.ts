@@ -1,3 +1,5 @@
+// Define the types for our competition system
+
 export interface GalleryItem {
   id: number
   type: "image" | "video"

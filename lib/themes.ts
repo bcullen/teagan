@@ -1,3 +1,4 @@
+// Define available themes
 export type Theme = {
   name: string
   label: string

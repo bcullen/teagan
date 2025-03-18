@@ -1,90 +1,89 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-
-type User = {
-  username: string
-  isAdmin: boolean
-} | null
+import { useSession, signIn, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 type AuthContextType = {
-  user: User
-  login: (username: string, password: string) => Promise<boolean>
-  logout: () => void
   isAuthenticated: boolean
   isAdmin: boolean
+  user: any
+  login: (username: string, password: string) => Promise<boolean>
+  logout: () => void
   allowPublicUploads: boolean
   setAllowPublicUploads: (allow: boolean) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// In a real app, you would store this securely on the server
-// This is just for demonstration purposes
-const ADMIN_CREDENTIALS = {
-  username: "admin",
-  password: "password123",
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>(null)
+  const { data: session, status } = useSession()
   const [allowPublicUploads, setAllowPublicUploads] = useState(false)
+  const router = useRouter()
 
-  // Load user and settings from localStorage on mount
+  // Load settings from API on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("galleryUser")
-    if (storedUser) {
+    const fetchSettings = async () => {
       try {
-        setUser(JSON.parse(storedUser))
+        const response = await fetch("/api/settings")
+        if (response.ok) {
+          const settings = await response.json()
+          setAllowPublicUploads(settings.allowPublicUploads)
+        }
       } catch (error) {
-        console.error("Error parsing stored user:", error)
+        console.error("Error fetching settings:", error)
       }
     }
 
-    const storedSettings = localStorage.getItem("gallerySettings")
-    if (storedSettings) {
-      try {
-        const settings = JSON.parse(storedSettings)
-        setAllowPublicUploads(settings.allowPublicUploads)
-      } catch (error) {
-        console.error("Error parsing stored settings:", error)
-      }
-    }
+    fetchSettings()
   }, [])
 
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem("gallerySettings", JSON.stringify({ allowPublicUploads }))
-  }, [allowPublicUploads])
+  // Save settings to API when they change
+  const updateAllowPublicUploads = async (allow: boolean) => {
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ allowPublicUploads: allow }),
+      })
+
+      if (response.ok) {
+        setAllowPublicUploads(allow)
+      }
+    } catch (error) {
+      console.error("Error updating settings:", error)
+    }
+  }
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    // In a real app, you would validate credentials against a database
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-      const newUser = { username, isAdmin: true }
-      setUser(newUser)
-      localStorage.setItem("galleryUser", JSON.stringify(newUser))
-      return true
+    try {
+      const result = await signIn("credentials", {
+        username,
+        password,
+        redirect: false,
+      })
+
+      return result?.ok || false
+    } catch (error) {
+      console.error("Login error:", error)
+      return false
     }
-    return false
   }
 
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem("galleryUser")
-  }
-
-  const updateAllowPublicUploads = (allow: boolean) => {
-    setAllowPublicUploads(allow)
+    signOut({ callbackUrl: "/" })
   }
 
   return (
     <AuthContext.Provider
       value={{
-        user,
+        isAuthenticated: status === "authenticated",
+        isAdmin: session?.user?.isAdmin || false,
+        user: session?.user || null,
         login,
         logout,
-        isAuthenticated: !!user,
-        isAdmin: user?.isAdmin || false,
         allowPublicUploads,
         setAllowPublicUploads: updateAllowPublicUploads,
       }}

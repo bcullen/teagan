@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { useGallery } from "@/lib/gallery-context"
+import { useGallery } from "@/lib/gallery-context-db"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AdminCompetition from "@/components/admin-gallery"
 import CompetitionManager from "@/components/gallery-manager"
 import ThemeSettings from "@/components/theme-settings"
+import Link from "next/link"
+import { Users } from "lucide-react"
 
 export default function AdminPage() {
   const { isAuthenticated, isAdmin, logout, allowPublicUploads, setAllowPublicUploads } = useAuth()
@@ -26,7 +28,7 @@ export default function AdminPage() {
   useEffect(() => {
     // Redirect if not authenticated or not an admin
     if (!isAuthenticated || !isAdmin) {
-      router.push("/admin/login")
+      router.push("/auth/login")
     }
   }, [isAuthenticated, isAdmin, router])
 
@@ -39,9 +41,17 @@ export default function AdminPage() {
     <div className="container mx-auto py-10 px-4 space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Button variant="outline" onClick={logout}>
-          Logout
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              User Management
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={logout}>
+            Logout
+          </Button>
+        </div>
       </div>
 
       <Card>
