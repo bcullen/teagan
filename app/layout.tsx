@@ -12,7 +12,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Competition Gallery",
   description: "A gallery of dance competitions and performances",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -38,6 +37,3 @@ export default function RootLayout({
   )
 }
 
-
-
-import './globals.css'
